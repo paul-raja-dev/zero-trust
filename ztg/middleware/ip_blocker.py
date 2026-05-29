@@ -1,4 +1,5 @@
 from django.http import JsonResponse
+from ztg.models import BlockedIP
 
 class IPBlockerMiddleware:
 
@@ -7,9 +8,11 @@ class IPBlockerMiddleware:
     
     def __call__(self, request):
 
-        blocked_ips = []
+        client_ip = request.META.get('REMOTE_ADDR')
 
-        if request.META.get('REMOTE_ADDR') in blocked_ips:
+        is_blocked = BlockedIP.objects.filter(ip_address=client_ip,is_active=True).exists()
+
+        if is_blocked   :
             return JsonResponse({'error':'access denied'},status=403)
         
         response=self.get_response(request)

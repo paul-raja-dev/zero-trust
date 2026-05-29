@@ -12,7 +12,7 @@ class IPBlockerMiddleware:
 
         is_blocked = BlockedIP.objects.filter(ip_address=client_ip,is_active=True).exists()
 
-        if is_blocked   :
+        if is_blocked:
             return JsonResponse({'error':'access denied'},status=403)
         
         response=self.get_response(request)

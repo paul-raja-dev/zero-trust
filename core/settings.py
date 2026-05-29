@@ -43,6 +43,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'ztg.middleware.ip_blocker.IPBlockerMiddleware',
+    'ztg.middleware.rate_limiter.RateLimiter',
     'ztg.middleware.request_logger.RequestLoggerMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',

@@ -1,4 +1,5 @@
 from django.http import JsonResponse
+import time
 
 class RateLimiter:
 
@@ -12,12 +13,14 @@ class RateLimiter:
 
         ip_addr = request.META.get('REMOTE_ADDR')
 
-        self.request_counts[ip_addr] = self.request_counts.get(ip_addr,0) + 1
+        lst_time_stamp = self.request_counts.get(ip_addr,[])
+        lst_time_stamp.append(time.time())
+
+        self.request_counts[ip_addr] = lst_time_stamp
 
         print(self.request_counts)
 
-        if self.request_counts[ip_addr]>5:
-            return JsonResponse({'error' : 'too many request'},status = 429)
+
         
         response = self.get_response(request)
 

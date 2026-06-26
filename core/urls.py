@@ -1,22 +1,29 @@
-"""
-URL configuration for core project.
-
-The `urlpatterns` list routes URLs to views. For more information please see:
-    https://docs.djangoproject.com/en/6.0/topics/http/urls/
-Examples:
-Function views
-    1. Add an import:  from my_app import views
-    2. Add a URL to urlpatterns:  path('', views.home, name='home')
-Class-based views
-    1. Add an import:  from other_app.views import Home
-    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
-Including another URLconf
-    1. Import the include() function: from django.urls import include, path
-    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
-"""
 from django.contrib import admin
 from django.urls import path
 
+from ztg.views import dashboard_api
+from ztg.views.auth import login, refresh
+from ztg.views.dashboard import dashboard_view
+
 urlpatterns = [
     path('admin/', admin.site.urls),
+
+    # dashboard page
+    path('', dashboard_view, name='dashboard'),
+
+    # auth
+    path('api/login/', login, name='login'),
+    path('api/refresh/', refresh, name='refresh'),
+
+    # dashboard api
+    path('api/stats/', dashboard_api.stats, name='api-stats'),
+    path('api/requests/', dashboard_api.recent_requests, name='api-requests'),
+    path('api/threats/', dashboard_api.threats, name='api-threats'),
+    path('api/traffic/', dashboard_api.traffic_chart, name='api-traffic'),
+    path('api/threat-breakdown/', dashboard_api.threat_breakdown, name='api-threat-breakdown'),
+    path('api/top-ips/', dashboard_api.top_ips, name='api-top-ips'),
+    path('api/blocked-ips/', dashboard_api.blocked_ips, name='api-blocked-ips'),
+    path('api/block-ip/', dashboard_api.block_ip, name='api-block-ip'),
+    path('api/unblock-ip/<int:ip_id>/', dashboard_api.unblock_ip, name='api-unblock-ip'),
+    path('api/resolve-threat/<int:threat_id>/', dashboard_api.resolve_threat, name='api-resolve-threat'),
 ]

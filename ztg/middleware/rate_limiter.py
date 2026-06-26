@@ -1,41 +1,62 @@
 from django.http import JsonResponse
+from ztg.models import RateLimitViolation, ThreatEvent, BlockedIP
+from django.conf import settings
 import time
+
 
 class RateLimiter:
 
-    request_counts= {}
-    rate_limit = 5    # max request in given window_size
-    window_size = 10  # number of seconds to refresh the request count
+    request_counts = {}
 
-    def __init__(self,get_response):
+    def __init__(self, get_response):
         self.get_response = get_response
-    
+        self.rate_limit = getattr(settings, 'ZTG_RATE_LIMIT', 30)
+        self.window_size = getattr(settings, 'ZTG_RATE_WINDOW', 60)
+        self.auto_block_threshold = getattr(settings, 'ZTG_AUTO_BLOCK_AFTER', 5)
+
     def __call__(self, request):
-        
+
+        if request.path.startswith('/admin') or request.path.startswith('/static'):
+            return self.get_response(request)
 
         ip_addr = request.META.get('REMOTE_ADDR')
-
-        lst_time_stamp = self.request_counts.get(ip_addr,[])
-        lst_time_stamp.append(time.time())
-
-        filtered_list =[]
         current_time = time.time()
-        
 
-        for tim in lst_time_stamp:
-            if tim > current_time - self.window_size:
-                filtered_list.append(tim)
+        # get timestamps for this ip, add current one
+        timestamps = self.request_counts.get(ip_addr, [])
+        timestamps.append(current_time)
 
+        # keep only timestamps within the window
+        timestamps = [t for t in timestamps if t > current_time - self.window_size]
+        self.request_counts[ip_addr] = timestamps
 
-        self.request_counts[ip_addr] = filtered_list
+        if len(timestamps) > self.rate_limit:
 
-        if len(filtered_list) > self.rate_limit:
-            return JsonResponse({'error' : 'Too many request'},status = 429)
+            # log the violation to db
+            RateLimitViolation.objects.create(
+                ip_address=ip_addr,
+                path=request.path
+            )
 
-        print(self.request_counts)
+            # count how many violations this ip has recently
+            recent_violations = RateLimitViolation.objects.filter(
+                ip_address=ip_addr
+            ).count()
 
+            # auto-block if they keep abusing
+            if recent_violations >= self.auto_block_threshold:
+                BlockedIP.objects.get_or_create(
+                    ip_address=ip_addr,
+                    defaults={'reason': f'Auto-blocked: {recent_violations} rate limit violations'}
+                )
+                ThreatEvent.objects.create(
+                    threat_type='rate_abuse',
+                    severity='high',
+                    ip_address=ip_addr,
+                    description=f'Auto-blocked after {recent_violations} rate limit violations'
+                )
 
-        
+            return JsonResponse({'error': 'Too many requests'}, status=429)
+
         response = self.get_response(request)
-
         return response

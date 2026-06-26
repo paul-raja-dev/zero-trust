@@ -10,14 +10,18 @@ class RateLimiter:
 
     def __init__(self, get_response):
         self.get_response = get_response
-        self.rate_limit = getattr(settings, 'ZTG_RATE_LIMIT', 30)
+        self.rate_limit = getattr(settings, 'ZTG_RATE_LIMIT', 100)
         self.window_size = getattr(settings, 'ZTG_RATE_WINDOW', 60)
-        self.auto_block_threshold = getattr(settings, 'ZTG_AUTO_BLOCK_AFTER', 5)
+        self.auto_block_threshold = getattr(settings, 'ZTG_AUTO_BLOCK_AFTER', 10)
+
+    # paths that should never be rate limited
+    exempt_paths = ['/admin', '/static', '/api/', '/']
 
     def __call__(self, request):
 
-        if request.path.startswith('/admin') or request.path.startswith('/static'):
-            return self.get_response(request)
+        for path in self.exempt_paths:
+            if request.path.startswith(path):
+                return self.get_response(request)
 
         ip_addr = request.META.get('REMOTE_ADDR')
         current_time = time.time()

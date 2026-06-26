@@ -1,2 +1,228 @@
+{% load static %}
 <!DOCTYPE html>
-<html><body><h1>Dashboard</h1></body></html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZTG Security Dashboard</title>
+    <meta name="description" content="Zero Trust Gateway — Real-time security monitoring dashboard">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'ztg/css/dashboard.css' %}">
+</head>
+<body>
+
+    <!-- sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <span class="logo-icon">🛡️</span>
+                <span class="logo-text">ZTG</span>
+            </div>
+            <p class="logo-sub">Security Dashboard</p>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="#" class="nav-item active" data-section="overview">
+                <span class="nav-icon">📊</span> Overview
+            </a>
+            <a href="#" class="nav-item" data-section="requests">
+                <span class="nav-icon">📋</span> Request Logs
+            </a>
+            <a href="#" class="nav-item" data-section="threats">
+                <span class="nav-icon">⚠️</span> Threats
+            </a>
+            <a href="#" class="nav-item" data-section="blocked">
+                <span class="nav-icon">🚫</span> Blocked IPs
+            </a>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="status-badge">
+                <span class="status-dot"></span>
+                <span>System Active</span>
+            </div>
+        </div>
+    </aside>
+
+    <!-- main content -->
+    <main class="main-content">
+
+        <!-- top bar -->
+        <header class="topbar">
+            <button class="menu-toggle" id="menuToggle">☰</button>
+            <h1 class="page-title" id="pageTitle">Overview</h1>
+            <div class="topbar-right">
+                <span class="last-updated" id="lastUpdated">Updated just now</span>
+                <button class="btn-refresh" id="refreshBtn" title="Refresh">↻</button>
+            </div>
+        </header>
+
+        <!-- overview section -->
+        <section class="section active" id="section-overview">
+
+            <!-- stat cards -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: rgba(99, 102, 241, 0.15); color: #818cf8;">📨</div>
+                    <div class="stat-info">
+                        <p class="stat-label">Requests (24h)</p>
+                        <h2 class="stat-value" id="statRequests">—</h2>
+                        <p class="stat-trend" id="trendRequests"></p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: rgba(239, 68, 68, 0.15); color: #f87171;">🚫</div>
+                    <div class="stat-info">
+                        <p class="stat-label">Blocked IPs</p>
+                        <h2 class="stat-value" id="statBlocked">—</h2>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: rgba(251, 191, 36, 0.15); color: #fbbf24;">⚡</div>
+                    <div class="stat-info">
+                        <p class="stat-label">Rate Violations (24h)</p>
+                        <h2 class="stat-value" id="statViolations">—</h2>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: rgba(244, 63, 94, 0.15); color: #fb7185;">🔥</div>
+                    <div class="stat-info">
+                        <p class="stat-label">Active Threats</p>
+                        <h2 class="stat-value" id="statThreats">—</h2>
+                    </div>
+                </div>
+            </div>
+
+            <!-- charts row -->
+            <div class="charts-grid">
+                <div class="card chart-card">
+                    <h3 class="card-title">Traffic (Last 24h)</h3>
+                    <div class="chart-container">
+                        <canvas id="trafficChart"></canvas>
+                    </div>
+                </div>
+                <div class="card chart-card chart-small">
+                    <h3 class="card-title">Threat Breakdown</h3>
+                    <div class="chart-container">
+                        <canvas id="threatChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- top ips + recent threats -->
+            <div class="bottom-grid">
+                <div class="card">
+                    <h3 class="card-title">Top IPs by Requests</h3>
+                    <div class="table-wrap">
+                        <table class="data-table">
+                            <thead><tr><th>IP Address</th><th>Requests</th><th>Bar</th></tr></thead>
+                            <tbody id="topIpsBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3 class="card-title">Recent Threats</h3>
+                    <div class="threat-feed" id="threatFeed"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- requests section -->
+        <section class="section" id="section-requests">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Request Logs</h3>
+                    <div class="card-actions">
+                        <select id="methodFilter" class="filter-select">
+                            <option value="">All Methods</option>
+                            <option value="GET">GET</option>
+                            <option value="POST">POST</option>
+                            <option value="PUT">PUT</option>
+                            <option value="DELETE">DELETE</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="table-wrap">
+                    <table class="data-table" id="requestsTable">
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>Method</th>
+                                <th>Path</th>
+                                <th>Status</th>
+                                <th>IP</th>
+                            </tr>
+                        </thead>
+                        <tbody id="requestsBody"></tbody>
+                    </table>
+                </div>
+                <div class="pagination">
+                    <button class="btn-page" id="prevPage" disabled>← Prev</button>
+                    <span class="page-info" id="pageInfo">Page 1</span>
+                    <button class="btn-page" id="nextPage">Next →</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- threats section -->
+        <section class="section" id="section-threats">
+            <div class="card">
+                <h3 class="card-title">All Threat Events</h3>
+                <div class="table-wrap">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>Type</th>
+                                <th>Severity</th>
+                                <th>IP</th>
+                                <th>Description</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="threatsBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- blocked ips section -->
+        <section class="section" id="section-blocked">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Blocked IPs</h3>
+                    <button class="btn-primary" id="showBlockForm">+ Block IP</button>
+                </div>
+
+                <!-- block form -->
+                <div class="block-form hidden" id="blockForm">
+                    <div class="form-row">
+                        <input type="text" id="blockIpInput" class="form-input" placeholder="IP address (e.g. 192.168.1.100)">
+                        <input type="text" id="blockReasonInput" class="form-input" placeholder="Reason">
+                        <button class="btn-primary" id="blockIpBtn">Block</button>
+                        <button class="btn-ghost" id="cancelBlockBtn">Cancel</button>
+                    </div>
+                </div>
+
+                <div class="table-wrap">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>IP Address</th>
+                                <th>Reason</th>
+                                <th>Blocked At</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="blockedBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+    <script src="{% static 'ztg/js/dashboard.js' %}"></script>
+</body>
+</html>

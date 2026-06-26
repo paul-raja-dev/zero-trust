@@ -46,6 +46,7 @@ MIDDLEWARE = [
     'ztg.middleware.rate_limiter.RateLimiter',
     # 'ztg.middleware.jwt_auth.JWTAuthenticationMiddleware',
     'ztg.middleware.request_logger.RequestLoggerMiddleware',
+    'ztg.middleware.anomaly.AnomalyMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',

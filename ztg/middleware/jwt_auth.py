@@ -1,5 +1,5 @@
 from django.http import JsonResponse
-from services.jwt_service import decode_token
+from ztg.services.jwt_service import decode_token
 
 
 class JWTAuthenticationMiddleware:

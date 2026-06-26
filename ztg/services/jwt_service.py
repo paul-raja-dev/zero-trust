@@ -17,13 +17,13 @@ def generate_tokens(user):
     refresh_payload = {
             'user_id' : user.id,
             'token_type' : 'refresh',
-            'exp' : now+timedelta(days=7),
+            'exp' : now + timedelta(days=7),
             'iat' : now
     }
 
     return {
         'access' : jwt.encode(access_payload,settings.SECRET_KEY,algorithm='HS256'),
-        'refersh' : jwt.encode(refresh_payload,settings.SECRET_KEY,algorithm='HS256')
+        'refresh' : jwt.encode(refresh_payload,settings.SECRET_KEY,algorithm='HS256')
     }
 
 
